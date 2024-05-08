@@ -38,7 +38,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm --frozen-lockfile # 或 npm / yarn
+          cache: pnpm@8.11.0 --frozen-lockfile # 或 npm / yarn
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Install dependencies
