@@ -1,230 +1,111 @@
----
-title: 正则和glob，通通拿来吧！🤩
-date: 2024-05-13 09:43:19
-copyright: false
-author: Mr_Carl
-home: https://juejin.cn/user/712139266332670/posts
-origin: juejin
-url: https://juejin.cn/post/7244409172380139557
-tag: 
-  - 前端
-  - JavaScript
-  - 正则表达式
-categories: 
-description: 正则和glob，都可以用来进行匹配，但正则主要用于 文本内容 的匹配，而glob主要用于 文件路径 ...
----
+# 介绍
 
-正则和glob，都可以用来进行匹配，但正则主要用于 **文本内容** 的匹配，而glob主要用于 **文件路径** 的匹配，它俩具体是如何进行匹配的，就请听本文分解吧！
+根据[维基百科](https://en.wikipedia.org/wiki/Glob_(programming))的介绍，在计算机编程中 glob 模式表示带有通配符的路径名，例如在 bash 中查看文件列表：
 
-![ppx.jpg](./正则和glob，通通拿来吧！🤩/e58afcf8774e4288f14f90137ce895ee.awebp)
+```bash
+$ls src/*.js
+src/a.js src/b.js
+```
 
-## 正则
+它最初是贝尔实验室 Unix 系统上的一个名叫 glob 的命令（glob 是 global 的缩写），用于展开命令行中的通配符。后来系统提供了该功能的 C 语言库函数`glob()`，知名的 shell 解释器就使用了该接口，shell 脚本和命令行中使用的 glob 模式匹配功能便源自于此。
 
-### 简介
+# 基础语法
 
-正则表达式由 **字符** 和 **特殊符号** 组成，用于定义文本模式，以下是一些常见的正则表达式特殊符号的含义：
+相比正则表达式大量的元字符，glob 模式中元字符极少，所以掌握起来也很快。glob 默认不匹配隐藏文件（以点`.`开头的文件或目录），下面是 glob 的语法：
 
-* `.`：匹配任意单个字符
-* `*`：匹配前一个字符的零个或多个出现
-* `+`：匹配前一个字符的一个或多个出现
-* `?`：匹配前一个字符的零个或一个出现
-* `^`：匹配文本的开头
-* `$`：匹配文本的结尾
-* `[]`：匹配括号内的任意一个字符
-* `()`：定义一个捕获组，可以提取匹配的部分
+|通配符|描述|示例|匹配|不匹配|
+|---|---|---|---|---|
+|`*`|匹配0个或多个字符，包含空串|`Law*`|`Law`, `Laws`和`Lawer`|`La`, `aw`|
+|`?`|匹配1个字符|`?at`|`cat`, `bat`|`at`|
+|`[abc]`|匹配括号内字符集合中的单个字符|`[cb]at`|`cat`, `bat`|`at`, `bcat`|
+|`[a-z]`|匹配括号内字符范围中的单个字符|`[a-z]at`|`aat`, `bat`, `zat`|`at`, `bcat`, `Bat`|
+|`[^abc]`或`[!abc]`|匹配非括号内字符集合中的单个字符|`[!CB]at`|`cat`, `bat`|`Cat`, `Bat`|
+|`[^a-z]`或`[!a-z]`|匹配非括号内字符范围中的单个字符|`[!A-Z]at`|`aat`, `bat`, `zat`|`Aat`, `Bat`, `Zat`|
 
-### 示例
+> 在 bash 命令行中`[!abc]`需要转义成`[\!abc]`
 
-本节给出一些正则使用的常见场景，各位读者可以按需享用
+# 扩展语法
 
-![666.jpg](./正则和glob，通通拿来吧！🤩/6f3fa167d26f3b3f135850e4f47d4ada.awebp)
+除了基础语法外，bash 还支持 glob 的一些扩展语法，主要包含三种：
 
-1. **匹配邮箱地址**：
+* Brace Expansion
+* globstar
+* extglob
 
-   * 正则表达式：`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-   * 示例：
+三种扩展语法的定义和描述如下：
 
-   ```javascript
-   javascript复制代码const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-   const email = 'example@example.com';
-   if (emailRegex.test(email)) {
-     console.log('邮箱地址有效');
-   } else {
-     console.log('邮箱地址无效');
-   }
-   ```
+|通配符|描述|示例|匹配|不匹配|
+|---|---|---|---|---|
+|`{x, y, ...}`|Brace Expansion，展开花括号内容，支持展开嵌套括号|`a.{png,jp{,e}g}`|`a.png`, `a.jpg`, `a.jpeg`|
+|`**`|globstar，匹配所有文件和任意层目录，如果`**`后面紧接着`/`则只匹配目录，不含隐藏目录|`src/**`|`src/a.js`, `src/b/a.js`, `src/b/`|`src/.hide/a.js`|
+|`?(pattern-list)`|匹配0次或1次给定的模式|`a.?(txt|bin)`|`a.`, `a.txt`, `a.bin`|`a`|
+|`*(pattern-list)`|匹配0次或多次给定的模式|`a.*(txt|bin)`|`a.`, `a.txt`, `a.bin`, `a.txtbin`|`a`|
+|`+(pattern-list)`|匹配1次或多次给定的模式|`a.+(txt|bin)`|`a.txt`, `a.bin`, `a.txtbin`|`a.`, `a`|
+|`@(pattern-list)`|匹配给定的模式|`a.@(txt|bin)`|`a.txt`, `a.bin`|`a.`, `a.txtbin`|
+|`!(pattern-list)`|匹配非给定的模式|`a.!(txt|bin)`|`a.`, `a.txtbin`|`a.txt`, `a.bin`|
 
-2. **匹配手机号码**：
+> pattern-list 是一组以`|`作为分隔符的模式集合，例如`abc|a?c|ac*`
 
-   * 正则表达式：`/^1[3456789]\d{9}$/`
-   * 示例：
+# 与 regexp 的差异
 
-   ```javascript
-   javascript复制代码const phoneRegex = /^1[3456789]\d{9}$/;
-   const phoneNumber = '13812345678';
-   if (phoneRegex.test(phoneNumber)) {
-     console.log('手机号码有效');
-   } else {
-     console.log('手机号码无效');
-   }
-   ```
+glob 模式主要用于匹配文件路径，当然也可以用于匹配字符串，不过在匹配字符串的能力上比 regexp 要弱很多。由于 glob 模式和 regexp 存在相同的元字符，但是含义却不同，容易导致混淆，为了避免混淆，下面将 glob 模式转换成对应的 regexp 表示，以便区分他们的异同点。
 
-3. **提取 URL 中的域名**：
+|glob|regexp|精确的 regexp|
+|---|---|---|
+|`*`|`.*`|`^(?!\.)[^\/]*?$`|
+|`?`|`.`|`^(?!\.)[^\/]$`|
+|`[a-z]`|`[a-z]`|`^[a-z]$`|
 
-   * 正则表达式：`/https?:\/\/([^/]+)\/.*/`
-   * 示例：
+> glob 匹配的是整个字符串，而 regexp 默认匹配的是子串，regexp 如果要匹配整个字符串需显式指定`^`和`$`。正则表达式中的`(?!\.)`，其表示不匹配隐藏文件
 
-   ```javascript
-   javascript复制代码const urlRegex = /https?:\/\/([^/]+)\/.*/;
-   const url = 'https://www.example.com/path/to/page';
-   const domain = url.match(urlRegex)[1];
-   console.log('域名:', domain);
-   ```
+# JavaScript API
 
-4. **替换字符串中的所有数字**：
+通过上面的介绍，已经了解到 glob 模式可以用于匹配文件路径，甚至字符串，如何使用呢？在 JavaScript 中，正则表达式是以标准 API 形式提供的，开箱即用。但是 glob 模式匹配并非 JavaScript 中的标准 API，需要自行解析和匹配，这里介绍一个用 JavaScript 编写的 glob 的匹配库 [minimatch](https://github.com/isaacs/minimatch)，它支持 glob 基础语法和扩展语法，可以实现 glob 的测试、匹配以及转换成正则表达式。下面是使用示例：
 
-   * 正则表达式：`/\d/g`
-   * 示例：
+```js
+js复制代码const minimatch = require("minimatch")
 
-   ```javascript
-   javascript复制代码const string = 'Hello 123 World 456';
-   const result = string.replace(/\d/g, '');
-   console.log('替换后的字符串:', result);
-   ```
+// minimatch 作为函数使用测试路径匹配
+// 第一个参数是输入路径
+// 第二个参数是 glob 模式
+// 返回 boolean 值
+minimatch("a.txt", "*.txt") // true
+minimatch("a.txt", "*.bin") // false
 
-5. **验证日期格式（YYYY-MM-DD）**
+// minimatch.makeRe 可将 glob 模式串转换成 JS 中的 RegExp 对象
+// 然后使用生成的正则表达式，进行路径匹配测试
+minimatch.makeRe("*.txt").test("a.txt") // true
+minimatch.makeRe("*.bin").test("a.txt") // false
+```
 
-   * 正则表达式：`/^\d{4}-\d{2}-\d{2}$/`
-   * 示例：
+# 应用例子
 
-   ```javascript
-   javascript复制代码const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-   const date = '2022-12-31';
-   if (dateRegex.test(date)) {
-     console.log('日期格式正确');
-   } else {
-     console.log('日期格式错误');
-   }
-   ```
+glob 最常见的应用场景是匹配文件路径，使用 glob 匹配文件路径比正则表达式更简洁。下面例子实现利用 glob 模式过滤文件路径：
 
-6. **匹配 HTML 标签**：
+```js
+js复制代码var minimatch = require("minimatch");
 
-   * 正则表达式：`/<[^>]+>/g`
-   * 示例：
+const fileList = [
+  "src/index.js",
+  "src/index.css",
+  "src/pages/HomePage.jsx",
+  "src/pages/AboutPage/index.jsx"
+];
 
-   ```javascript
-   javascript复制代码const html = '<div>Hello World</div>';
-   const tags = html.match(/<[^>]+>/g);
-   console.log('匹配到的标签:', tags);
-   ```
+// minimatch.match 方法根据 glob 模式过滤路径列表
+// 第一个参数是路径列表
+// 第二个参数与是 glob 模式串
+// 返回过滤后的路径列表
+console.log(minimatch.match(fileList, "src/**/*.js{,x}"))
+// ["src/index.js", "src/pages/HomePage.jsx", "src/pages/AboutPage/index.jsx"]
+```
 
-7. **验证密码强度**（包含至少一个大写字母、一个小写字母和一个数字）：
+如果要通过 glob 模式遍历文件系统，可使用 [node-glob](https://github.com/isaacs/node-glob) ，它基于 minimatch 和 node 实现 glob 模式遍历文件的 API。
 
-   * 正则表达式：`/(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}/`
-   * 示例：
+# 参考
 
-   ```javascript
-   javascript复制代码const passwordRegex = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}/;
-   const password = 'Abcdefg123';
-   if (passwordRegex.test(password)) {
-     console.log('密码强度符合要求');
-   } else {
-     console.log('密码强度不符合要求');
-   }
-   ```
-
-8. **匹配邮政编码**（中国邮政编码为 6 位数字）：
-
-   * 正则表达式：`/^\d{6}$/`
-   * 示例：
-
-   ```javascript
-   javascript复制代码const postalCodeRegex = /^\d{6}$/;
-   const postalCode = '123456';
-   if (postalCodeRegex.test(postalCode)) {
-     console.log('邮政编码有效');
-   } else {
-     console.log('邮政编码无效');
-   }
-   ```
-
-9. **验证身份证号码**（中国身份证号码为 18 位数字）：
-
-   * 正则表达式：`/^\d{17}[\dXx]$/`
-   * 示例：
-
-   ```javascript
-   javascript复制代码const idRegex = /^\d{17}[\dXx]$/;
-   const idNumber = '320123198012345678';
-   if (idRegex.test(idNumber)) {
-     console.log('身份证号码有效');
-   } else {
-     console.log('身份证号码无效');
-   }
-   ```
-
-10. **验证 URL 格式**：
-
-  * 正则表达式：`/^(https?:\/\/)?([\w.-]+)\.([a-zA-Z]{2,})(\/\S*)?$/`
-  * 示例：
-
-  ```javascript
-  javascript复制代码const urlRegex = /^(https?:\/\/)?([\w.-]+)\.([a-zA-Z]{2,})(\/\S*)?$/;
-  const url = 'https://www.example.com/path/to/page';
-  if (urlRegex.test(url)) {
-    console.log('URL 格式正确');
-  } else {
-    console.log('URL 格式错误');
-  }
-  ```
-
-## glob匹配
-
-### 简介
-
-当我们需要在文件系统中进行 **文件路径** 匹配时，可以使用 `glob` 模式来快速匹配符合特定模式的文件路径，它是一种简单且常用的模式匹配语法，广泛应用于文件操作和构建工具中
-
-其语法规则如下：
-
-* **\***: 匹配0个或者多个字符，比如`d*`，可以匹配`d`，`dl`，`ddl`
-* **?**: 匹配单个字符，比如`d?`，只匹配`dd`，不能匹配`d`
-* **\[\]**: 包含在\[\]中的字符，只会被匹配一个，并且\[\]不可以为空,比如 \[abc\] 匹配a，b，c三个中的一个字符
-* **\-**: 两个字符中间用'-'连接表示range，比如\[0-9\]等同于\[0123456789\]，需要注意的是如果'-'出现在开头或者结尾，并不表示range，比如\[-a\]或者\[a-\]匹配 '-'或'a' 字符中的一个
-* **!**: 取反，\[!abc\] 表示匹配a,b,c之外的一个字符
-* **\*\***: 双星号代表可以匹配后代所有子目录
-* 任何以 **.** 开头命名的文件，都必须在glob中显示指定才能匹配，比如有一个文件.abc，那么`rm *`匹配不到.abc，只能使用`rm .*`
-
-### 示例
-
-以下是一些常见的 `glob` 匹配模式示例：
-
-* `*.js`：匹配当前目录下所有以 `.js` 结尾的文件
-* `src/**/*.js`：匹配 `src` 目录及其所有子目录下的所有以 `.js` 结尾的文件
-* `app.{js,css}`：匹配当前目录下的 `app.js` 和 `app.css` 文件
-* `!dist/*.js`：排除匹配 `dist` 目录下的所有 `.js` 文件
-* `[abc].js`：匹配当前目录下的 `a.js`、`b.js` 和 `c.js` 文件
-* `?(pattern|pattern|pattern).js`：匹配当前目录下的零个或一个括号内指定的模式文件，如 `pattern.js`、`pattern2.js`
-* `+(pattern|pattern|pattern).js`：匹配当前目录下至少一个括号内指定的模式文件，如 `pattern.js`、`pattern2.js`
-* `*(pattern|pattern|pattern).js`：匹配当前目录下任意数量的括号内指定的模式文件，如 `pattern.js`、`pattern2.js`
-* `@(pattern|pat*|pat?erN).js`：匹配当前目录下与括号内模式之一匹配的文件，如 `pattern.js`、`patN.js`
-
-## 正则表达式与 `glob` 匹配的区别
-
-正则表达式和 `glob` 匹配都是用于 **模式匹配**，但它们在语法和用途上存在一些区别：
-
-* **语法差异**：正则表达式使用 **特殊符号** 来表示模式，具有更高的灵活性和表达能力，而 `glob` 使用通配符（如 `*` 和 `?`）来匹配文件路径模式，更加简洁易懂
-* **匹配范围**：正则表达式可以匹配更复杂的 **文本模式**，而 `glob` 主要用于匹配 **文件路径模式**
-* **匹配方式**：正则表达式是通过模式的 **匹配规则** 来匹配字符串的，可以进行更精确的匹配和提取，而 `glob` 是根据 **通配符** 来匹配文件路径，只能进行简单的文件名匹配
-* **使用场景**：正则表达式适用于需要对字符串进行 **复杂模式匹配和替换** 的场景，如验证表单数据、提取特定信息，`glob` 主要用于 **文件操作**，如文件查找、筛选
-
-虽然正则表达式更加灵活和强大，但在一些简单的文件路径匹配场景下，`glob` 的简洁性和易用性更受开发者欢迎，所以合适的场景，选择合适的技术，这是永远不变的真理
-
-![nice2.jpg](./正则和glob，通通拿来吧！🤩/867605c47b96c67f98ab27d5a213a7e5.awebp)
-
-## 结语
-
-通过灵活运用正则表达式，我们可以高效地处理和操作字符串，满足各种文本模式的匹配需求。同时，了解正则表达式和 `glob` 匹配的区别，可以根据具体的场景选择合适的模式匹配工具
-
-都看到这里啦，如果本篇文章对你有帮助，希望能 **点个赞👍** 支持下啦，你们的支持才是我最大的动力！😘
-
-![R-C.gif](./正则和glob，通通拿来吧！🤩/c896f65a89de9a656c37e0a264195cf7.awebp)
+* [en.wikipedia.org/wiki/Glob\_(…](https://en.wikipedia.org/wiki/Glob_(programming))
+* [www.gnu.org/software/ba…](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html#Brace-Expansion)
+* [www.gnu.org/software/ba…](https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html#Pattern-Matching)
+* [github.com/isaacs/mini…](https://github.com/isaacs/minimatch)
+* [github.com/qdlaoyao/js…](https://github.com/qdlaoyao/js-regex-mini-book)
