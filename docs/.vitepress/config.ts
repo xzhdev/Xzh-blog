@@ -3,7 +3,7 @@ import { defineConfig } from "vitepress";
 const Guide = [
   { text: "JavaScript", link: "/guide/javascript" },
   { text: "Git", link: "/guide/git" },
-  { text: "Configurations", link: "/guide/config" },
+  { text: "Glob", link: "/guide/glob" },
   { text: "Components", link: "/guide/components" },
   { text: "Contributing", link: "/contributing" },
   { text: "Guidelines", link: "/guidelines" },
