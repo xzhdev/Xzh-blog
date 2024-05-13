@@ -9,7 +9,7 @@ src/a.js src/b.js
 
 它最初是贝尔实验室 Unix 系统上的一个名叫 glob 的命令（glob 是 global 的缩写），用于展开命令行中的通配符。后来系统提供了该功能的 C 语言库函数`glob()`，知名的 shell 解释器就使用了该接口，shell 脚本和命令行中使用的 glob 模式匹配功能便源自于此。
 
-# 基础语法
+## 基础语法
 
 相比正则表达式大量的元字符，glob 模式中元字符极少，所以掌握起来也很快。glob 默认不匹配隐藏文件（以点`.`开头的文件或目录），下面是 glob 的语法：
 
@@ -24,7 +24,7 @@ src/a.js src/b.js
 
 > 在 bash 命令行中`[!abc]`需要转义成`[\!abc]`
 
-# 扩展语法
+## 扩展语法
 
 除了基础语法外，bash 还支持 glob 的一些扩展语法，主要包含三种：
 
@@ -46,7 +46,7 @@ src/a.js src/b.js
 
 > pattern-list 是一组以`|`作为分隔符的模式集合，例如`abc|a?c|ac*`
 
-# 与 regexp 的差异
+## 与 regexp 的差异
 
 glob 模式主要用于匹配文件路径，当然也可以用于匹配字符串，不过在匹配字符串的能力上比 regexp 要弱很多。由于 glob 模式和 regexp 存在相同的元字符，但是含义却不同，容易导致混淆，为了避免混淆，下面将 glob 模式转换成对应的 regexp 表示，以便区分他们的异同点。
 
@@ -58,7 +58,7 @@ glob 模式主要用于匹配文件路径，当然也可以用于匹配字符串
 
 > glob 匹配的是整个字符串，而 regexp 默认匹配的是子串，regexp 如果要匹配整个字符串需显式指定`^`和`$`。正则表达式中的`(?!\.)`，其表示不匹配隐藏文件
 
-# JavaScript API
+## JavaScript API
 
 通过上面的介绍，已经了解到 glob 模式可以用于匹配文件路径，甚至字符串，如何使用呢？在 JavaScript 中，正则表达式是以标准 API 形式提供的，开箱即用。但是 glob 模式匹配并非 JavaScript 中的标准 API，需要自行解析和匹配，这里介绍一个用 JavaScript 编写的 glob 的匹配库 [minimatch](https://github.com/isaacs/minimatch)，它支持 glob 基础语法和扩展语法，可以实现 glob 的测试、匹配以及转换成正则表达式。下面是使用示例：
 
@@ -78,7 +78,7 @@ minimatch.makeRe("*.txt").test("a.txt") // true
 minimatch.makeRe("*.bin").test("a.txt") // false
 ```
 
-# 应用例子
+## 应用例子
 
 glob 最常见的应用场景是匹配文件路径，使用 glob 匹配文件路径比正则表达式更简洁。下面例子实现利用 glob 模式过滤文件路径：
 
@@ -102,7 +102,7 @@ console.log(minimatch.match(fileList, "src/**/*.js{,x}"))
 
 如果要通过 glob 模式遍历文件系统，可使用 [node-glob](https://github.com/isaacs/node-glob) ，它基于 minimatch 和 node 实现 glob 模式遍历文件的 API。
 
-# 参考
+## 参考
 
 * [en.wikipedia.org/wiki/Glob\_(…](https://en.wikipedia.org/wiki/Glob_(programming))
 * [www.gnu.org/software/ba…](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html#Brace-Expansion)
